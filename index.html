@@ -44,6 +44,8 @@ tr:hover td { background: var(--color-background-secondary); }
     <button class="active" onclick="filter('all',this)">All items</button>
     <button onclick="filter('S',this)">S-tier only</button>
     <button onclick="filter('A',this)">A-tier only</button>
+    <button onclick="filter('B',this)">B-tier only</button>
+    <button onclick="filter('C',this)">C-tier only</button>
     <button onclick="filter('legend',this)">Legendary cost</button>
     <button onclick="filter('rare',this)">Rare cost</button>
     <button onclick="filter('uncommon',this)">Uncommon cost</button>
@@ -238,6 +240,8 @@ function render() {
   let data = computed;
   if (current === 'S') data = computed.filter(i => i.tier === 'S');
   if (current === 'A') data = computed.filter(i => i.tier === 'A');
+  if (current === 'B') data = computed.filter(i => i.tier === 'B');
+  if (current === 'C') data = computed.filter(i => i.tier === 'C');
   if (current === 'legend') data = computed.filter(i => i.currency && String(i.sv).includes('L'));
   if (current === 'rare') data = computed.filter(i => i.currency && String(i.sv).includes('R'));
   if (current === 'uncommon') data = computed.filter(i => i.currency && String(i.sv).includes('U'));
