@@ -49,7 +49,9 @@ tr:hover td { background: var(--color-background-secondary); }
     <button onclick="filter('legend',this)">Legendary cost</button>
     <button onclick="filter('rare',this)">Rare cost</button>
     <button onclick="filter('uncommon',this)">Uncommon cost</button>
+    <button onclick="filter('hyped',this)">Hyped</button>
     <button onclick="filter('raising',this)">Raising</button>
+    <button onclick="filter('unstable',this)">Unstable</button>
   </div>
   <table>
     <thead>
@@ -246,6 +248,8 @@ function render() {
   if (current === 'rare') data = computed.filter(i => i.currency && String(i.sv).includes('R'));
   if (current === 'uncommon') data = computed.filter(i => i.currency && String(i.sv).includes('U'));
   if (current === 'raising') data = computed.filter(i => i.status === 'Raising');
+  if (current === 'hyped') data = computed.filter(i => i.status === 'Hyped');
+  if (current === 'unstable') data = computed.filter(i => i.status === 'Unstable');
 
   const maxRoi = Math.max(...computed.map(i=>i.roi||0));
 
