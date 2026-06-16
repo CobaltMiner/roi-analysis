@@ -270,12 +270,16 @@ function render() {
 
   const sCount = data.filter(i=>i.tier==='S').length;
   const aCount = data.filter(i=>i.tier==='A').length;
+  const bCount = data.filter(i=>i.tier==='B').length;
+  const cCount = data.filter(i=>i.tier==='C').length;
   const avgRoi = Math.round(data.reduce((s,i)=>s+(i.roi||0),0)/data.length);
   const best = data[0];
   document.getElementById('summary').innerHTML = `
     <div class="card"><div class="card-label">Best ROI item</div><div class="card-value" style="font-size:14px">${best ? best.name : '-'}</div></div>
     <div class="card"><div class="card-label">S-tier items</div><div class="card-value">${sCount}</div></div>
     <div class="card"><div class="card-label">A-tier items</div><div class="card-value">${aCount}</div></div>
+    <div class="card"><div class="card-label">B-tier items</div><div class="card-value">${bCount}</div></div>
+    <div class="card"><div class="card-label">C-tier items</div><div class="card-value">${cCount}</div></div>
     <div class="card"><div class="card-label">Avg ROI shown</div><div class="card-value">${avgRoi}%</div></div>
   `;
 }
