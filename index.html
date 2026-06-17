@@ -67,7 +67,7 @@ tr:hover td { background: var(--color-background-secondary); }
     </thead>
     <tbody id="tbody"></tbody>
   </table>
-  <p class="note">ROI score = (mid pulls value ÷ SV value) × 100. Items priced in Legendaries/Rares/Uncommons rated as cheapest to obtain — treated as high value for low cost. Tier: S = exceptional ROI, A = great, B = decent, C = low.</p>
+  <p class="note">ROI score = (mid pulls value ÷ SV value) × 100. Legendaries/Rares/Uncommons converted using 1 SV = 4 Legendaries = 8 Rares = 16 Uncommons. Tier: S = exceptional ROI, A = great, B = decent, C = low.</p>
 </div>
 
 <script>
@@ -184,9 +184,9 @@ const items = [
   { name:"Pump 2018", sv:"2R", pullsRaw:"1-3", pullsMid:2, currency:true, svLabel:"2 Rares", status:"Unstable", rise:"None", note:"" },
 ];
 
-const LEGEND_VALUE = 5;
-const RARE_VALUE = 2;
-const UNCOMMON_VALUE = 0.5;
+const LEGEND_VALUE = 0.25;
+const RARE_VALUE = 0.125;
+const UNCOMMON_VALUE = 0.0625;
 
 function getSvNum(item) {
   if (!item.currency) return item.sv;
@@ -284,7 +284,6 @@ function render() {
     <div class="card"><div class="card-label">A-tier items</div><div class="card-value">${aCount}</div></div>
     <div class="card"><div class="card-label">B-tier items</div><div class="card-value">${bCount}</div></div>
     <div class="card"><div class="card-label">C-tier items</div><div class="card-value">${cCount}</div></div>
-    <div class="card"><div class="card-label">Avg ROI shown</div><div class="card-value">${avgRoi}%</div></div>
   `;
 }
 
