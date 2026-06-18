@@ -1,0 +1,317 @@
+<h2 style="text-align: center;">Sanctioned Collects ROI — Items ranked by best return on investment</h2>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); background-color: #0d1117; color: #ffffff; }
+.wrap { padding: 1rem 0; position: relative; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 auto 1.25rem auto; justify-content: center; max-width: 90%; }
+.filters button { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 0.5px solid #ffffff; background: transparent; color: #ffffff; cursor: pointer; transition: all 0.15s; }
+.filters button.active { background: var(--color-background-info); color: var(--color-text-info); border-color: transparent; font-weight: 500; }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.card { background: #161b22; border-radius: var(--border-radius-md); padding: 0.75rem 1rem; }
+.card-label { font-size: 12px; color: #ffffff; margin-bottom: 4px; }
+.card-value { font-size: 20px; font-weight: 500; color: #ffffff; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 500; color: #ffffff; border-bottom: 0.5px solid #30363d; text-transform: uppercase; letter-spacing: 0.04em; }
+td { padding: 8px 10px; border-bottom: 0.5px solid #30363d; color: #ffffff; vertical-align: middle; word-break: break-word; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #161b22; }
+.badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 10px; }
+.badge-s { background: #E6F1FB; color: #0C447C; }
+.badge-a { background: #EAF3DE; color: #27500A; }
+.badge-b { background: #FAEEDA; color: #633806; }
+.badge-c { background: #FCEBEB; color: #791F1F; }
+.badge-legend { background: #EEEDFE; color: #3C3489; }
+.roi-bar { height: 6px; border-radius: 3px; background: #30363d; overflow: hidden; margin-top: 3px; }
+.roi-fill { height: 100%; border-radius: 3px; }
+.status-r { color: #E24B4A; font-weight: 500; }
+.status-h { color: #534AB7; font-weight: 500; }
+.status-u { color: #E24B4A; }
+.status-s { color: #ffffff; }
+.col-item { width: 22%; }
+.col-sv { width: 11%; }
+.col-pulls { width: 16%; }
+.col-roi { width: 22%; }
+.col-tier { width: 9%; }
+.col-status { width: 10%; }
+.col-trend { width: 10%; }
+.note { font-size: 12px; color: #ffffff; margin-top: 1rem; padding-top: 0.75rem; border-top: 0.5px solid #30363d; }
+
+body.light-mode { background-color: #ffffff; color: #000000; }
+body.light-mode .filters button { border-color: #000000; color: #000000; }
+body.light-mode .card { background: #f0f2f5; }
+body.light-mode .card-label, body.light-mode .card-value { color: #000000; }
+body.light-mode th, body.light-mode td { color: #000000; border-bottom-color: #d0d7de; }
+body.light-mode tr:hover td { background: #f0f2f5; }
+body.light-mode .roi-bar { background: #d0d7de; }
+body.light-mode .status-s { color: #000000; }
+body.light-mode .note { color: #000000; border-top-color: #d0d7de; }
+
+#theme-toggle { position: fixed; top: 1rem; right: 1.5rem; background: transparent; border: none; cursor: pointer; font-size: 22px; line-height: 1; z-index: 1000; }
+</style>
+
+<div class="wrap">
+  <button id="theme-toggle" onclick="toggleTheme()">🌙</button>
+  <div class="summary" id="summary"></div>
+  <div class="filters">
+    <button class="active" onclick="filter('all',this)">All items</button>
+    <button onclick="filter('S',this)">S-tier only</button>
+    <button onclick="filter('A',this)">A-tier only</button>
+    <button onclick="filter('B',this)">B-tier only</button>
+    <button onclick="filter('C',this)">C-tier only</button>
+    <button onclick="filter('legend',this)">Legendary cost</button>
+    <button onclick="filter('rare',this)">Rare cost</button>
+    <button onclick="filter('uncommon',this)">Uncommon cost</button>
+    <button onclick="filter('hyped',this)">Hyped</button>
+    <button onclick="filter('raising',this)">Raising</button>
+    <button onclick="filter('unstable',this)">Unstable</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th class="col-item">Item</th>
+        <th class="col-sv">SV value</th>
+        <th class="col-pulls">Pulls</th>
+        <th class="col-roi">ROI</th>
+        <th class="col-tier">Tier</th>
+        <th class="col-status">Status</th>
+        <th class="col-trend">Chance ↑</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <p class="note">ROI score = (mid pulls value ÷ SV value) × 100. Legendaries/Rares/Uncommons converted using 1 SV = 4 Legendaries = 8 Rares = 16 Uncommons. Tier: S = exceptional ROI, A = great, B = decent, C = low.</p>
+</div>
+
+<script>
+const items = [
+  { name:"Spectral (Gun)", sv:3, pullsRaw:"5+", pullsMid:5.5, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Spectral (Knife)", sv:65, pullsRaw:"90-100", pullsMid:99, currency:false, status:"Raising", rise:"High", note:"" },
+  { name:"Traveler (Gun)", sv:65, pullsRaw:"80-85+", pullsMid:90.8, currency:false, status:"Raising", rise:"High", note:"" },
+  { name:"Aurora (Gun)", sv:55, pullsRaw:"80-85+", pullsMid:90.8, currency:false, status:"Raising", rise:"High", note:"" },
+  { name:"Vampire (Gun)", sv:55, pullsRaw:"75+", pullsMid:82.5, currency:false, status:"Raising", rise:"High", note:"" },
+  { name:"Beach", sv:30, pullsRaw:"45-", pullsMid:45, currency:false, status:"Stable", rise:"None", note:"" },
+  { name:"Aurora (Knife)", sv:3, pullsRaw:"10+", pullsMid:11, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Vampire (Knife)", sv:3, pullsRaw:"8+", pullsMid:8.8, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Traveler (Knife)", sv:3, pullsRaw:"6+", pullsMid:6.6, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Cane Knife 2018", sv:800, pullsRaw:"800~", pullsMid:800, currency:false, status:"Lowering", rise:"None", note:"" },
+  { name:"Dungeon", sv:100, pullsRaw:"210+", pullsMid:193, currency:false, status:"Hyped", rise:"High/Very High", note:"" },
+  { name:"Silent Night (Knife)", sv:50, pullsRaw:"60+", pullsMid:66, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Darkknife", sv:50, pullsRaw:"80+", pullsMid:88, currency:false, status:"Raising", rise:"Very High", note:"" },
+  { name:"Makeshift", sv:40, pullsRaw:"50-55+", pullsMid:57.3, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Zombified 2022", sv:40, pullsRaw:"50-55+", pullsMid:57.3, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Starry (Gun)", sv:20, pullsRaw:"40~", pullsMid:40, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Swirl", sv:20, pullsRaw:"30+", pullsMid:33, currency:false, status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Silent Night (Gun)", sv:12, pullsRaw:"16+", pullsMid:17.6, currency:false, status:"Unstable", rise:"None", note:"" },
+  { name:"Floral (Knife)", sv:15, pullsRaw:"15+", pullsMid:16.5, currency:false, status:"Unstable", rise:"Low", note:"" },
+  { name:"Magma (Gun)", sv:10, pullsRaw:"40+", pullsMid:44, currency:false, status:"Hyped", rise:"High", note:"" },
+  { name:"Watcher (Gun)", sv:10, pullsRaw:"30+", pullsMid:33, currency:false, status:"Hyped", rise:"High", note:"" },
+  { name:"Ghastly (Gun)", sv:5, pullsRaw:"25+", pullsMid:27.5, currency:false, status:"Stable", rise:"Normal", note:"" },
+  { name:"Sun", sv:5, pullsRaw:"5~", pullsMid:5, currency:false, status:"Unstable", rise:"None", note:"" },
+  { name:"Ghostfire", sv:3, pullsRaw:"25-28+", pullsMid:28.7, currency:false, status:"Hyped", rise:"Low", note:"" },
+  { name:"Darkgun", sv:3, pullsRaw:"5+", pullsMid:5.5, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Snowflakes 2020", sv:2, pullsRaw:"30-35", pullsMid:32.5, currency:false, status:"Hyped", rise:"Low", note:"" },
+  { name:"Gingerbread 2017", sv:1, pullsRaw:"3-5", pullsMid:4, currency:false, status:"Unstable", rise:"None", note:"" },
+  { name:"Starry (Knife)", sv:"4L", pullsRaw:"4-5", pullsMid:4.5, currency:true, svLabel:"4 Legendaries", status:"Stable", rise:"None/Low", note:"" },
+  { name:"Wraith (Knife)", sv:"4L", pullsRaw:"17-20", pullsMid:18.5, currency:true, svLabel:"4 Legendaries", status:"Stable", rise:"None/Low", note:"" },
+  { name:"Bones 2019", sv:170, pullsRaw:"240-270+", pullsMid:280, currency:false, status:"Hyped", rise:"High/Very High", note:"" },
+  { name:"Zombified 2019 (Knife)", sv:80, pullsRaw:"100+", pullsMid:110, currency:false, status:"Stable", rise:"Normal", note:"" },
+  { name:"Brains 2019", sv:65, pullsRaw:"105+", pullsMid:115.5, currency:false, status:"Hyped", rise:"High", note:"" },
+  { name:"Gingerbread 2019 (Knife)", sv:60, pullsRaw:"80+", pullsMid:88, currency:false, status:"Stable", rise:"None", note:"" },
+  { name:"Sweater 2018 (Knife)", sv:60, pullsRaw:"95+", pullsMid:104.5, currency:false, status:"Hyped", rise:"High/Very High", note:"" },
+  { name:"Branches", sv:35, pullsRaw:"55+", pullsMid:60.5, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Snowflake 2018", sv:20, pullsRaw:"50+", pullsMid:55, currency:false, status:"Raising", rise:"High/Very High", note:"" },
+  { name:"Skulls 2021", sv:15, pullsRaw:"35-40+", pullsMid:40.7, currency:false, status:"Raising", rise:"Normal", note:"" },
+  { name:"Gothic Gun", sv:3, pullsRaw:"15-20+", pullsMid:18.7, currency:false, status:"Stable", rise:"None/Low", note:"" },
+  { name:"Wrap Set 2020", sv:2, pullsRaw:"40-45+", pullsMid:47.3, currency:false, status:"Hyped", rise:"Normal/High", note:"" },
+  { name:"Gb Knife 2020", sv:1, pullsRaw:"30+", pullsMid:33, currency:false, status:"Hyped", rise:"Normal/High", note:"" },
+  { name:"Zombie 2021", sv:1, pullsRaw:"35+", pullsMid:38.5, currency:false, status:"Hyped", rise:"Low/Normal", note:"" },
+  { name:"Steel Gun", sv:1, pullsRaw:"15+", pullsMid:16.5, currency:false, status:"Hyped", rise:"Normal", note:"" },
+  { name:"Hazard (Gun)", sv:"4L", pullsRaw:"15+", pullsMid:16.5, currency:true, svLabel:"3 Legendaries", status:"Stable", rise:"Low", note:"" },
+  { name:"Stars (Knife)", sv:"4L", pullsRaw:"5-7+", pullsMid:6.6, currency:true, svLabel:"3 Legendaries", status:"Stable", rise:"Low", note:"" },
+  { name:"Zombie (2023)", sv:"4L", pullsRaw:"8-12", pullsMid:10, currency:true, svLabel:"3 Legendaries", status:"Stable", rise:"Low", note:"" },
+  { name:"Snowman 2021 (Gun)", sv:"3L", pullsRaw:"25+", pullsMid:27.5, currency:true, svLabel:"2 Legendaries", status:"Stable", rise:"Low", note:"" },
+  { name:"Tree 2021", sv:"3L", pullsRaw:"21+", pullsMid:23.1, currency:true, svLabel:"2 Legendaries", status:"Stable", rise:"Low", note:"" },
+  { name:"Lantern", sv:"3L", pullsRaw:"14", pullsMid:14, currency:true, svLabel:"2 Legendaries", status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Meltdown", sv:"3L", pullsRaw:"16", pullsMid:16, currency:true, svLabel:"2 Legendaries", status:"Stable", rise:"Low", note:"" },
+  { name:"Cookie Knife", sv:"1L", pullsRaw:"20-25+", pullsMid:25.3, currency:true, svLabel:"1 Legendary", status:"Hyped", rise:"Low/Normal", note:"" },
+  { name:"Moonlight", sv:"1L", pullsRaw:"16+", pullsMid:17.6, currency:true, svLabel:"1 Legendary", status:"Stable", rise:"None/Low", note:"" },
+  { name:"Bats 2018 (Knife)", sv:145, pullsRaw:"160+", pullsMid:176, currency:false, status:"Stable", rise:"Normal/High", note:"" },
+  { name:"Gifts 2019 (Knife)", sv:85, pullsRaw:"95+", pullsMid:104.5, currency:false, status:"Stable", rise:"Normal", note:"" },
+  { name:"Pine 2019 (Knife)", sv:75, pullsRaw:"80+", pullsMid:88, currency:false, status:"Unstable", rise:"None", note:"" },
+  { name:"Ghoulish (Knife)", sv:120, pullsRaw:"200+", pullsMid:220, currency:false, status:"Raising", rise:"High", note:"" },
+  { name:"Snowman 2018 (Gun)", sv:22, pullsRaw:"35-40", pullsMid:37.5, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Wrapped 2018 (Gun)", sv:22, pullsRaw:"35-40", pullsMid:37.5, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Frosted 2019 (Knife)", sv:20, pullsRaw:"60+", pullsMid:66, currency:false, status:"Stable", rise:"Very High", note:"" },
+  { name:"RIP 2019 (Gun)", sv:15, pullsRaw:"30+", pullsMid:33, currency:false, status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Snowflakes 2019 (Gun)", sv:20, pullsRaw:"55+", pullsMid:60.5, currency:false, status:"Stable", rise:"Normal/High", note:"" },
+  { name:"CandyCorn 2017 (Knife)", sv:20, pullsRaw:"25-30+", pullsMid:30.3, currency:false, status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Coal 2018 (Knife)", sv:15, pullsRaw:"25-30", pullsMid:27.5, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Combat II (Knife)", sv:10, pullsRaw:"15~", pullsMid:15, currency:false, status:"Unstable", rise:"None", note:"" },
+  { name:"Ecto 2017 (Knife)", sv:10, pullsRaw:"40+", pullsMid:44, currency:false, status:"Stable", rise:"Normal/High", note:"" },
+  { name:"Prism", sv:10, pullsRaw:"12~", pullsMid:12, currency:false, status:"Unstable", rise:"None", note:"" },
+  { name:"Webbed (Gun)", sv:12, pullsRaw:"30-40+", pullsMid:38.5, currency:false, status:"Raising", rise:"High", note:"" },
+  { name:"Phantom", sv:10, pullsRaw:"35+", pullsMid:38.5, currency:false, status:"Stable", rise:"Normal/High", note:"" },
+  { name:"Pumpkin 2019 (Knife)", sv:7, pullsRaw:"30+", pullsMid:33, currency:false, status:"Stable", rise:"Normal", note:"" },
+  { name:"Zombie 2017 (Knife)", sv:7, pullsRaw:"15-20", pullsMid:17.5, currency:false, status:"Stable", rise:"None/Low", note:"" },
+  { name:"Mummified 2019 (Knife)", sv:5, pullsRaw:"25-30", pullsMid:27.5, currency:false, status:"Stable", rise:"Normal/High", note:"" },
+  { name:"Sketchy", sv:4, pullsRaw:"3-7", pullsMid:5, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"CandyCorn 2019 (Knife)", sv:3, pullsRaw:"30-35+", pullsMid:35.8, currency:false, status:"Hyped", rise:"Normal/High", note:"" },
+  { name:"Alex", sv:3, pullsRaw:"3-6", pullsMid:4.5, currency:false, status:"Unstable", rise:"Low", note:"" },
+  { name:"Corl", sv:3, pullsRaw:"3-6", pullsMid:4.5, currency:false, status:"Unstable", rise:"Low", note:"" },
+  { name:"Denis", sv:3, pullsRaw:"3-6", pullsMid:4.5, currency:false, status:"Unstable", rise:"Low", note:"" },
+  { name:"Sub", sv:3, pullsRaw:"3-6", pullsMid:4.5, currency:false, status:"Unstable", rise:"Low", note:"" },
+  { name:"Starry 2020 (Gun)", sv:5, pullsRaw:"20-30+", pullsMid:27.5, currency:false, status:"Raising", rise:"High", note:"" },
+  { name:"Slimy 2019 (Knife)", sv:2, pullsRaw:"30+", pullsMid:33, currency:false, status:"Stable", rise:"Normal/High", note:"" },
+  { name:"Elf 2018 (Gun)", sv:1, pullsRaw:"25+", pullsMid:27.5, currency:false, status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Apocalypse (Gun)", sv:"4L", pullsRaw:"15+", pullsMid:16.5, currency:true, svLabel:"2 Legendaries", status:"Stable", rise:"High", note:"" },
+  { name:"Infected (Gun)", sv:"4L", pullsRaw:"15+", pullsMid:16.5, currency:true, svLabel:"2 Legendaries", status:"Hyped", rise:"High", note:"" },
+  { name:"Bats 2020 (Knife)", sv:"4L", pullsRaw:"8-10", pullsMid:9, currency:true, svLabel:"2 Legendaries", status:"Hyped", rise:"Normal", note:"" },
+  { name:"Slashed 2020 (Knife)", sv:"4L", pullsRaw:"6-8", pullsMid:7, currency:true, svLabel:"1 Legendary", status:"Stable", rise:"Low", note:"" },
+  { name:"Snowflakes 2019 (Knife)", sv:"2L", pullsRaw:"5+", pullsMid:5.5, currency:true, svLabel:"1 Legendary", status:"Stable", rise:"Low", note:"" },
+  { name:"Webbed 2019 (Knife)", sv:"2L", pullsRaw:"5+", pullsMid:5.5, currency:true, svLabel:"1 Legendary", status:"Stable", rise:"Normal/High", note:"" },
+  { name:"Hunter 2022 (Knife)", sv:"2R", pullsRaw:"9+", pullsMid:9.9, currency:true, svLabel:"2 Rares", status:"Stable", rise:"Low", note:"" },
+  { name:"Ribbons 2021 (Knife)", sv:"2R", pullsRaw:"11+", pullsMid:12.1, currency:true, svLabel:"2 Rares", status:"Stable", rise:"Low", note:"" },
+  { name:"Etched 2023 (Knife)", sv:"1R", pullsRaw:"8~", pullsMid:8, currency:true, svLabel:"3 Uncommons", status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Ornaments 2020 (Gun)", sv:"3U", pullsRaw:"10~", pullsMid:10, currency:true, svLabel:"1 Rare", status:"Stable", rise:"Low", note:"" },
+  { name:"Webs 2022 (Gun)", sv:"2U", pullsRaw:"10+", pullsMid:11, currency:true, svLabel:"1 Uncommon", status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Zombie Dog", sv:825, pullsRaw:"925", pullsMid:925, currency:false, status:"Stable", rise:"Medium", note:"" },
+  { name:"Black Cat", sv:270, pullsRaw:"225-250+", pullsMid:287.5, currency:false, status:"Lowering", rise:"Low", note:"" },
+  { name:"Elf 2019", sv:230, pullsRaw:"275-300", pullsMid:287.5, currency:false, status:"Stable", rise:"Low", note:"" },
+  { name:"Blue Pump 2018", sv:220, pullsRaw:"240~", pullsMid:240, currency:false, status:"Unstable", rise:"Low", note:"" },
+  { name:"Dogey", sv:130, pullsRaw:"210+", pullsMid:231, currency:false, status:"Stable", rise:"High", note:"" },
+  { name:"Red Pump 2018", sv:120, pullsRaw:"100-150", pullsMid:125, currency:false, status:"Unstable", rise:"Low", note:"Mixed" },
+  { name:"Green Pump 2018", sv:60, pullsRaw:"60-80", pullsMid:70, currency:false, status:"Unstable", rise:"Low", note:"" },
+  { name:"Pump 2017", sv:45, pullsRaw:"70+", pullsMid:77, currency:false, status:"Stable", rise:"High", note:"" },
+  { name:"Mr. Reindeer", sv:45, pullsRaw:"60", pullsMid:60, currency:false, status:"Stable", rise:"High", note:"" },
+  { name:"Piggy", sv:30, pullsRaw:"70", pullsMid:70, currency:false, status:"Stable", rise:"Medium", note:"" },
+  { name:"Elf 2016", sv:12, pullsRaw:"30", pullsMid:30, currency:false, status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Red Pump 2020", sv:12, pullsRaw:"30-35", pullsMid:32.5, currency:false, status:"Stable", rise:"Normal", note:"" },
+  { name:"Green Pump 2020", sv:10, pullsRaw:"15-20", pullsMid:17.5, currency:false, status:"Stable", rise:"Normal", note:"" },
+  { name:"Red Pump 2021", sv:10, pullsRaw:"25", pullsMid:25, currency:false, status:"Stable", rise:"Normal", note:"" },
+  { name:"Skully", sv:10, pullsRaw:"25-35", pullsMid:30, currency:false, status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Green Pump 2021", sv:8, pullsRaw:"15+", pullsMid:16.5, currency:false, status:"Stable", rise:"High", note:"" },
+  { name:"Mr. Snowman", sv:7, pullsRaw:"15+", pullsMid:16.5, currency:false, status:"Raising", rise:"Normal", note:"" },
+  { name:"Blue Pump 2020", sv:5, pullsRaw:"10+", pullsMid:11, currency:false, status:"Stable", rise:"Low/Normal", note:"" },
+  { name:"Shadow Pump", sv:3, pullsRaw:"8+", pullsMid:8.8, currency:false, status:"Stable", rise:"Very Low", note:"" },
+  { name:"Pump 2018", sv:"2R", pullsRaw:"1-3", pullsMid:2, currency:true, svLabel:"2 Rares", status:"Unstable", rise:"None", note:"" },
+];
+
+const LEGEND_VALUE = 0.25;
+const RARE_VALUE = 0.125;
+const UNCOMMON_VALUE = 0.0625;
+
+function getSvNum(item) {
+  if (!item.currency) return item.sv;
+  const s = String(item.sv);
+  if (s.includes('L')) return parseInt(s) * LEGEND_VALUE;
+  if (s.includes('R')) return parseInt(s) * RARE_VALUE;
+  if (s.includes('U')) return parseInt(s) * UNCOMMON_VALUE;
+  return parseFloat(s);
+}
+
+function getRoi(item) {
+  if (item.pullsMid === null) return null;
+  const svNum = getSvNum(item);
+  return Math.round((item.pullsMid / svNum) * 100);
+}
+
+function getTier(roi, item) {
+  if (roi === null) return 'N/A';
+  if (roi >= 300) return 'S';
+  if (roi >= 175) return 'A';
+  if (roi >= 120) return 'B';
+  return 'C';
+}
+
+function tierBadge(tier) {
+  const cls = {S:'badge-s',A:'badge-a',B:'badge-b',C:'badge-c','N/A':'badge-c'}[tier] || 'badge-c';
+  return `<span class="badge ${cls}">${tier}</span>`;
+}
+
+function statusColor(s) {
+  const l = s.toLowerCase();
+  if (l === 'raising') return 'status-r';
+  if (l === 'hyped') return 'status-h';
+  if (l === 'unstable') return 'status-u';
+  return 'status-s';
+}
+
+const computed = items.map(item => {
+  const roi = getRoi(item);
+  const tier = getTier(roi, item);
+  return { ...item, roi, tier, svNum: getSvNum(item) };
+}).filter(i => i.roi !== null).sort((a,b) => b.roi - a.roi);
+
+let current = 'all';
+function filter(type, btn) {
+  document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  current = type;
+  render();
+}
+
+function render() {
+  let data = computed;
+  if (current === 'S') data = computed.filter(i => i.tier === 'S');
+  if (current === 'A') data = computed.filter(i => i.tier === 'A');
+  if (current === 'B') data = computed.filter(i => i.tier === 'B');
+  if (current === 'C') data = computed.filter(i => i.tier === 'C');
+  if (current === 'legend') data = computed.filter(i => i.currency && String(i.sv).includes('L'));
+  if (current === 'rare') data = computed.filter(i => i.currency && String(i.sv).includes('R'));
+  if (current === 'uncommon') data = computed.filter(i => i.currency && String(i.sv).includes('U'));
+  if (current === 'raising') data = computed.filter(i => i.status === 'Raising');
+  if (current === 'hyped') data = computed.filter(i => i.status === 'Hyped');
+  if (current === 'unstable') data = computed.filter(i => i.status === 'Unstable');
+
+  const maxRoi = Math.max(...computed.map(i=>i.roi||0));
+
+  document.getElementById('tbody').innerHTML = data.map(item => {
+    const roiPct = Math.min(100, Math.round((item.roi / maxRoi) * 100));
+    const barColor = item.tier === 'S' ? '#185FA5' : item.tier === 'A' ? '#3B6D11' : item.tier === 'B' ? '#BA7517' : '#A32D2D';
+    const svDisplay = item.currency ? `<span style="font-size:11px;color:var(--color-text-secondary)">${item.svLabel}</span>` : item.sv;
+    const riseColor = item.rise === 'Very High' || item.rise === 'High' ? '#3B6D11' : item.rise === 'None' ? '#A32D2D' : 'var(--color-text-secondary)';
+    return `<tr>
+      <td style="font-weight:500">${item.name}${item.note ? `<br><span style="font-size:11px;color:var(--color-text-secondary)">${item.note}</span>` : ''}</td>
+      <td>${svDisplay}</td>
+      <td>${item.pullsRaw}</td>
+      <td>
+        <span style="font-size:13px;font-weight:500">${item.roi}%</span>
+        <div class="roi-bar"><div class="roi-fill" style="width:${roiPct}%;background:${barColor}"></div></div>
+      </td>
+      <td>${tierBadge(item.tier)}</td>
+      <td><span class="${statusColor(item.status)}" style="font-size:12px">${item.status}</span></td>
+      <td style="font-size:12px;color:${riseColor}">${item.rise}</td>
+    </tr>`;
+  }).join('');
+
+  const sCount = data.filter(i=>i.tier==='S').length;
+  const aCount = data.filter(i=>i.tier==='A').length;
+  const bCount = data.filter(i=>i.tier==='B').length;
+  const cCount = data.filter(i=>i.tier==='C').length;
+  const avgRoi = Math.round(data.reduce((s,i)=>s+(i.roi||0),0)/data.length);
+  const best = data[0];
+  document.getElementById('summary').innerHTML = `
+    <div class="card"><div class="card-label">Best ROI item</div><div class="card-value" style="font-size:14px">${best ? best.name : '-'}</div></div>
+    <div class="card"><div class="card-label">S-tier items</div><div class="card-value">${sCount}</div></div>
+    <div class="card"><div class="card-label">A-tier items</div><div class="card-value">${aCount}</div></div>
+    <div class="card"><div class="card-label">B-tier items</div><div class="card-value">${bCount}</div></div>
+    <div class="card"><div class="card-label">C-tier items</div><div class="card-value">${cCount}</div></div>
+  `;
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('light-mode');
+  const isLight = document.body.classList.contains('light-mode');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-toggle').textContent = isLight ? '☀️' : '🌙';
+}
+
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'light') {
+  document.body.classList.add('light-mode');
+}
+document.getElementById('theme-toggle').textContent = savedTheme === 'light' ? '☀️' : '🌙';
+
+render();
+</script>
